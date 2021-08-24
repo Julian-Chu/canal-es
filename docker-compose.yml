@@ -38,8 +38,8 @@ services:
         DOCKER_API_VERSION: 1.22
         KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
+#      volumes:
+#        - /var/run/docker.sock:/var/run/docker.sock
 
     es:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
@@ -56,3 +56,5 @@ services:
         - "5601:5601"
       environment:
         - ELASTICSEARCH_HOSTS=http://es:9200
+      depends_on:
+        - es
