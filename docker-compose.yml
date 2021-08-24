@@ -4,7 +4,6 @@ services:
     mysql:
       image: mysql:latest
       volumes:
-#        - ./mysql/conf:/etc/conf.d
         - ./mysql/my.cnf:/etc/my.cnf
         - ./mysql/init:/docker-entrypoint-initdb.d
       environment:
@@ -25,5 +24,35 @@ services:
 #        - canal.instance.filter.regex=.*\\..*
         - canal.auto.scan=false
         - canal.destinations=example
-#      depends_on:
-#        - mysql
+      depends_on:
+        - mysql
+    zookeeper:
+      image: wurstmeister/zookeeper
+      ports:
+        - "2181:2181"
+    kafka:
+      image: wurstmeister/kafka
+      ports:
+        - "9092"
+      environment:
+        DOCKER_API_VERSION: 1.22
+        KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+
+    es:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+      ports:
+        - "9200:9200"
+        - "9300:9300"
+
+      environment:
+        discovery.type: single-node
+
+    kibana:
+      image: docker.elastic.co/kibana/kibana:7.14.0
+      ports:
+        - "5601:5601"
+      environment:
+        - ELASTICSEARCH_HOSTS=http://es:9200
