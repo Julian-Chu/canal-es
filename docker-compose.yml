@@ -2,13 +2,28 @@ version: '3.1'
 
 services:
     mysql:
-      container_name: test-db
       image: mysql:latest
       volumes:
-        - ./mysql/conf:/etc/conf.d
+#        - ./mysql/conf:/etc/conf.d
+        - ./mysql/my.cnf:/etc/my.cnf
         - ./mysql/init:/docker-entrypoint-initdb.d
       environment:
-        - "MYSQL_ROOT_PASSWORD=root"
-        - "MYSQL_DATABASE=test-db"
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=mysql
       ports:
         - "3306:3306"
+
+    canal:
+      image: canal/canal-server
+      environment:
+        - canal.instance.master.address=mysql:3306
+        - canal.instance.dbUsername=canal
+        - canal.instance.dbPassword=canal
+        - canal.instance.connectionCharset=UTF-8
+        - canal.instance.tsdb.enable=true
+        - canal.instance.gtidon=false
+#        - canal.instance.filter.regex=.*\\..*
+        - canal.auto.scan=false
+        - canal.destinations=example
+#      depends_on:
+#        - mysql
