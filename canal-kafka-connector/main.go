@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/segmentio/kafka-go"
 	"github.com/withlin/canal-go/client"
 	pbe "github.com/withlin/canal-go/protocol/entry"
 )
@@ -15,7 +17,7 @@ func main() {
 
 	// 192.168.199.17 替换成你的canal server的地址
 	// example 替换成-e canal.destinations=example 你自己定义的名字
-	connector := client.NewSimpleCanalConnector("127.0.0.1", 11111, "", "", "example", 60000, 60*60*1000)
+	connector := client.NewSimpleCanalConnector(os.Getenv("canalAddr"), 11111, "", "", "example", 60000, 60*60*1000)
 	err := connector.Connect()
 	if err != nil {
 		log.Println(err)
@@ -41,6 +43,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	/// Kafka
+	// to produce messages
+	topic := "my-topic"
+	partition := 0
+	kafkaAddr := os.Getenv("kafkaAddr")
+	conn, err := kafka.DialLeader(context.Background(), "tcp", kafkaAddr+":9092", topic, partition)
+	if err != nil {
+		log.Fatal("failed to dial leader:", err)
+	}
+
 	for {
 
 		message, err := connector.Get(100, nil, nil)
@@ -54,9 +66,19 @@ func main() {
 			fmt.Println("===没有数据了===")
 			continue
 		}
-
 		printEntry(message.Entries)
 
+		// kafka
+		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		_, err = conn.WriteMessages(
+			kafka.Message{Value: []byte("one!")},
+			kafka.Message{Value: []byte("two!")},
+			kafka.Message{Value: []byte("three!")},
+		)
+		log.Println("Send message to kafka")
+		if err != nil {
+			log.Fatal("failed to write messages:", err)
+		}
 	}
 }
 
