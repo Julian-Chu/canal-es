@@ -24,6 +24,8 @@ services:
 #        - canal.instance.filter.regex=.*\\..*
         - canal.auto.scan=false
         - canal.destinations=example
+      ports:
+        - "11111:11111"
       depends_on:
         - mysql
     zookeeper:
