@@ -97,3 +97,13 @@ services:
       environment:
         - canalAddr=canal
         - kafkaAddr=kafka
+
+
+    kafka-es-connector:
+      build:
+        context: kafka-es-connector
+      command: "go run main.go"
+      depends_on:
+        - kafka
+      environment:
+        - kafkaAddr=kafka
