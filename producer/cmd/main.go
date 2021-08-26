@@ -18,12 +18,14 @@ func main() {
 		time.Sleep(time.Second)
 	}
 
-	for {
+	names := []string{"Tom", "Mary", "John"}
+	var cnt uint64
+	for ; ; cnt++ {
 		stat, err := db.Prepare("INSERT INTO login(name) VALUES (?)")
 		if err != nil {
 			log.Fatalf("failed to prepare stat: %+v\n", err)
 		}
-		username := "test user"
+		username := names[cnt%3]
 		res, err := stat.Exec(username)
 		if err != nil {
 			log.Fatalf("failed to insert data: %+v\n", err)

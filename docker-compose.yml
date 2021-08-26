@@ -107,3 +107,4 @@ services:
         - kafka
       environment:
         - kafkaAddr=kafka
+        - ELASTICSEARCH_URL=http://es:9200
