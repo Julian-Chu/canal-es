@@ -82,9 +82,8 @@ func main() {
 	}
 }
 
-func printEntry(entrys []pbe.Entry) {
-
-	for _, entry := range entrys {
+func printEntry(entries []pbe.Entry) {
+	for _, entry := range entries {
 		if entry.GetEntryType() == pbe.EntryType_TRANSACTIONBEGIN || entry.GetEntryType() == pbe.EntryType_TRANSACTIONEND {
 			continue
 		}

@@ -90,6 +90,7 @@ services:
     canal-kafka-connector:
       build:
         context: canal-kafka-connector
+      command: "go run main.go"
       depends_on:
         - kafka
         - mysql
