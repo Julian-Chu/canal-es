@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -67,13 +68,22 @@ func main() {
 			continue
 		}
 		printEntry(message.Entries)
-
+		entries := extractEntries(message.Entries)
+		messages := make([]kafka.Message, 0, len(entries))
+		for _, m := range entries {
+			jsonStr, err := json.Marshal(m)
+			fmt.Println(m)
+			fmt.Println(jsonStr)
+			if err != nil {
+				fmt.Printf("failed: marshal to json : %+v", err)
+				continue
+			}
+			messages = append(messages, kafka.Message{Value: jsonStr})
+		}
 		// kafka
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		_, err = conn.WriteMessages(
-			kafka.Message{Value: []byte("one!")},
-			kafka.Message{Value: []byte("two!")},
-			kafka.Message{Value: []byte("three!")},
+			messages...,
 		)
 		log.Println("Send message to kafka")
 		if err != nil {
@@ -82,6 +92,37 @@ func main() {
 	}
 }
 
+func extractEntries(entries []pbe.Entry) []map[string]interface{} {
+	var res []map[string]interface{}
+	for _, entry := range entries {
+		if entry.GetEntryType() == pbe.EntryType_TRANSACTIONBEGIN || entry.GetEntryType() == pbe.EntryType_TRANSACTIONEND {
+			continue
+		}
+		rowChange := new(pbe.RowChange)
+
+		err := proto.Unmarshal(entry.GetStoreValue(), rowChange)
+		checkError(err)
+		if rowChange != nil {
+			eventType := rowChange.GetEventType()
+			header := entry.GetHeader()
+			fmt.Println(fmt.Sprintf("================> binlog[%s : %d],name[%s,%s], eventType: %s", header.GetLogfileName(), header.GetLogfileOffset(), header.GetSchemaName(), header.GetTableName(), header.GetEventType()))
+
+			for _, rowData := range rowChange.GetRowDatas() {
+				if eventType == pbe.EventType_INSERT {
+					printColumn(rowData.GetAfterColumns())
+					columns := rowData.GetAfterColumns()
+					m := make(map[string]interface{})
+					for _, col := range columns {
+						fmt.Println("col:", col.GetName())
+						m[col.GetName()] = col.GetValue()
+					}
+					res = append(res, m)
+				}
+			}
+		}
+	}
+	return res
+}
 func printEntry(entries []pbe.Entry) {
 	for _, entry := range entries {
 		if entry.GetEntryType() == pbe.EntryType_TRANSACTIONBEGIN || entry.GetEntryType() == pbe.EntryType_TRANSACTIONEND {
