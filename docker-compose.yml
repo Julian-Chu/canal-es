@@ -91,20 +91,33 @@ services:
       build:
         context: canal-kafka-connector
       command: "go run main.go"
-      depends_on:
-        - kafka
-        - mysql
       environment:
         - canalAddr=canal
         - kafkaAddr=kafka
+      depends_on:
+        - kafka
+        - mysql
 
 
     kafka-es-connector:
       build:
         context: kafka-es-connector
       command: "go run main.go"
-      depends_on:
-        - kafka
       environment:
         - kafkaAddr=kafka
         - ELASTICSEARCH_URL=http://es:9200
+      depends_on:
+        - kafka
+        - -es
+
+    producer:
+      build:
+        context: producer
+      command: "go run main.go"
+      environment:
+        - DB_USER=root
+        - DB_PASSWORD=root
+        - DB_HOST=mysql
+      depends_on:
+        - mysql
+
