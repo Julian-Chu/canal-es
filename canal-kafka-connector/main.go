@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,10 +30,8 @@ func main() {
 	topic := "my-topic"
 	partition := 0
 	kafkaAddr := os.Getenv("kafkaAddr")
-	conn, err := kafka.DialLeader(context.Background(), "tcp", kafkaAddr+":9092", topic, partition)
-	if err != nil {
-		log.Fatal("failed to dial leader:", err)
-	}
+	kafkaEndpoint := kafkaAddr + ":9092"
+	kafkaProducer := NewKafkaProducer("tcp", kafkaEndpoint, topic, partition)
 
 	for {
 		message, err := connector.Get(100, nil, nil)
@@ -55,8 +52,6 @@ func main() {
 		messages := make([]kafka.Message, 0, len(entries))
 		for _, m := range entries {
 			jsonStr, err := json.Marshal(m)
-			fmt.Println(m)
-			fmt.Println(jsonStr)
 			if err != nil {
 				fmt.Printf("failed: marshal to json : %+v", err)
 				continue
@@ -64,8 +59,8 @@ func main() {
 			messages = append(messages, kafka.Message{Value: jsonStr})
 		}
 		// kafka
-		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-		_, err = conn.WriteMessages(
+		kafkaProducer.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		_, err = kafkaProducer.WriteMessages(
 			messages...,
 		)
 		log.Println("Send message to kafka")
