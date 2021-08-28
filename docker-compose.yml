@@ -74,9 +74,13 @@ services:
       ports:
         - "9200:9200"
         - "9300:9300"
-
       environment:
         discovery.type: single-node
+      healthcheck:
+        test: curl --cacert /usr/share/elasticsearch/config/certs/ca/ca.crt -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+        interval: 30s
+        timeout: 10s
+        retries: 5
 
     kibana:
       image: docker.elastic.co/kibana/kibana:7.14.0
@@ -108,7 +112,7 @@ services:
         - ELASTICSEARCH_URL=http://es:9200
       depends_on:
         - kafka
-        - -es
+        - es
 
     producer:
       build:
