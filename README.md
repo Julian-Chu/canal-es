@@ -9,7 +9,7 @@ how to test:
 
 in Kibana, there's two ways to find data
 - create index pattern `test`
-- go to discoveryS
+- go to discovery
   ![](./discover.png)
 
 or

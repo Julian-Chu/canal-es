@@ -94,7 +94,7 @@ services:
     canal-kafka-connector:
       build:
         context: canal-kafka-connector
-      command: "go run main.go"
+      command: "go run ./..."
       environment:
         - canalAddr=canal
         - kafkaAddr=kafka
@@ -106,7 +106,7 @@ services:
     kafka-es-connector:
       build:
         context: kafka-es-connector
-      command: "go run main.go"
+      command: "go run ./..."
       environment:
         - kafkaAddr=kafka
         - ELASTICSEARCH_URL=http://es:9200
@@ -117,7 +117,7 @@ services:
     producer:
       build:
         context: producer
-      command: "go run main.go"
+      command: "go run ./..."
       environment:
         - DB_USER=root
         - DB_PASSWORD=root
