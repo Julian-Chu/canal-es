@@ -15,11 +15,10 @@ import (
 )
 
 type ESProducer struct {
-	Client *elasticsearch.Client
+	client *elasticsearch.Client
 }
 
 func NewESProducer(cfg elasticsearch.Config) *ESProducer {
-
 	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
 		log.Fatalf("es: failed to init client: %+v\n", err)
@@ -27,18 +26,18 @@ func NewESProducer(cfg elasticsearch.Config) *ESProducer {
 	var (
 		esInfo map[string]interface{}
 	)
+	// es container can be ready but server is still starting
 	cnt := 5
-	retried := 0
 	waitTime := 5 * time.Second
-waiting:
-	res, err := es.Info()
-	if err != nil {
-		if retried < cnt {
+	var res *esapi.Response
+	for retried := 0; retried <= cnt; retried++ {
+		res, err = es.Info()
+		if err != nil {
 			retried++
-			waitTime *= 2
 			log.Printf("retry %d of %d\n", retried, cnt)
 			time.Sleep(waitTime)
-			goto waiting
+			waitTime *= 2
+			continue
 		}
 		log.Fatalf("Error getting response: %s", err)
 	}
@@ -56,7 +55,7 @@ waiting:
 	log.Printf("Client: %s", elasticsearch.Version)
 	log.Printf("Server: %s", esInfo["version"].(map[string]interface{})["number"])
 	log.Println(strings.Repeat("~", 37))
-	return &ESProducer{Client: es}
+	return &ESProducer{client: es}
 }
 
 func (e ESProducer) Send(index, documentID, messageBody, refresh string) {
@@ -69,7 +68,7 @@ func (e ESProducer) Send(index, documentID, messageBody, refresh string) {
 	}
 
 	// Perform the request with the client.
-	res, err := req.Do(context.Background(), e.Client)
+	res, err := req.Do(context.Background(), e.client)
 	if err != nil {
 		log.Fatalf("Error getting response: %s", err)
 	}
@@ -90,33 +89,6 @@ func (e ESProducer) Send(index, documentID, messageBody, refresh string) {
 }
 
 func main() {
-	///// es
-	//var (
-	//	esInfo map[string]interface{}
-	//)
-	//es, err := elasticsearch.NewDefaultClient()
-	//if err != nil {
-	//	log.Fatalf("Error creating the client: %s", err)
-	//}
-	//
-	//res, err := es.Info()
-	//if err != nil {
-	//	log.Fatalf("Error getting response: %s", err)
-	//}
-	//
-	//defer res.Body.Close()
-	//// Check response status
-	//if res.IsError() {
-	//	log.Fatalf("Error: %s", res.String())
-	//}
-	//// Deserialize the response into a map.
-	//if err := json.NewDecoder(res.Body).Decode(&esInfo); err != nil {
-	//	log.Fatalf("Error parsing the response body: %s", err)
-	//}
-	//// Print client and server version numbers.
-	//log.Printf("Client: %s", elasticsearch.Version)
-	//log.Printf("Server: %s", esInfo["version"].(map[string]interface{})["number"])
-	//log.Println(strings.Repeat("~", 37))
 	es := NewESProducer(elasticsearch.Config{})
 
 	/// kafka
